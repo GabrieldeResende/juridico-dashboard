@@ -16,18 +16,14 @@ exports.listar = (req, res) => {
       const termo = busca.toLowerCase();
       dados = dados.filter(
         (item) =>
-          (item["Nome do assistido"] || "").toLowerCase().includes(termo) ||
-          (item["Responsável pelo agendamento"] || "")
-            .toLowerCase()
-            .includes(termo) ||
-          (item["Organização"] || "").toLowerCase().includes(termo),
+          (item.nome_do_assistido || "").toLowerCase().includes(termo) ||
+          (item.responsavel_agendamento || "").toLowerCase().includes(termo) ||
+          (item.organizacao || "").toLowerCase().includes(termo),
       );
     }
 
     if (realizado) {
-      dados = dados.filter(
-        (item) => item["Agendamento realizado"] === realizado,
-      );
+      dados = dados.filter((item) => item.agendamento_realizado === realizado);
     }
 
     const pageNum = Math.max(1, parseInt(page));
@@ -51,17 +47,12 @@ exports.metricas = (req, res) => {
   try {
     const dados = loadData();
 
-    const valoresUnicos = [
-      ...new Set(dados.map((i) => i["Agendamento realizado"])),
-    ];
-    // console.log("Valores únicos de Agendamento realizado:", valoresUnicos);
-
     const total = dados.length;
     const realizados = dados.filter(
-      (i) => i["Agendamento realizado"] === "Sim",
+      (i) => i.agendamento_realizado === "Sim",
     ).length;
     const naoRealizados = dados.filter(
-      (i) => i["Agendamento realizado"] === "Não",
+      (i) => i.agendamento_realizado === "Não",
     ).length;
 
     const porStatus = {
@@ -69,9 +60,8 @@ exports.metricas = (req, res) => {
       "Não Realizado": naoRealizados,
     };
 
-    // Evolução mensal — formato da data: "4/9/2021" (mês/dia/ano)
     const porMes = dados.reduce((acc, i) => {
-      const dataStr = i["Data do agendamento"];
+      const dataStr = i.data_agendamento;
       if (!dataStr) return acc;
       const partes = dataStr.split("/");
       if (partes.length < 3) return acc;
@@ -84,15 +74,7 @@ exports.metricas = (req, res) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([mes, quantidade]) => ({ mes, quantidade }));
 
-    // console.log("Evolução mensal:", evolucaoMensal);
-
-    res.json({
-      total,
-      realizados,
-      naoRealizados,
-      porStatus,
-      evolucaoMensal,
-    });
+    res.json({ total, realizados, naoRealizados, porStatus, evolucaoMensal });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao calcular métricas" });
